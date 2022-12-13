@@ -18,4 +18,5 @@ public class EmployeeDTO implements Serializable {
     private String lastName;
     private String email;
     private String departmentCode;
+    private String organizationCode;
 }

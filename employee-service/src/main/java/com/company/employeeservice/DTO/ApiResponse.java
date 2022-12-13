@@ -14,4 +14,5 @@ public class ApiResponse {
 
     private EmployeeDTO employeeDTO;
     private DepartmentDTO departmentDTO;
+    private OrganizationDto organizationDto;
 }

@@ -23,6 +23,7 @@ public class EmployeeResource {
     public ResponseEntity<ApiResponse> getEmployeeById(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
+    
 
 
 }

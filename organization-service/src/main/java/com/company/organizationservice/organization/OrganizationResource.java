@@ -18,7 +18,7 @@ public class OrganizationResource {
     }
 
     @GetMapping("{code}")
-    public ResponseEntity<OrganizationDto> GetOrgByCode(@PathVariable String code) {
+    public ResponseEntity<OrganizationDto> getOrgByCode(@PathVariable String code) {
         return ResponseEntity.ok(organizationService.getByOrgCode(code));
     }
 

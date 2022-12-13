@@ -2,7 +2,9 @@ package com.company.employeeservice.employee;
 
 import com.company.employeeservice.DTO.ApiResponse;
 import com.company.employeeservice.DTO.DepartmentDTO;
+import com.company.employeeservice.DTO.OrganizationDto;
 import com.company.employeeservice.client.DepartmentClient;
+import com.company.employeeservice.client.OrganizationClient;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,8 @@ public class EmployeeService {
 //    private final WebClient webClient;
 
     private final DepartmentClient departmentClient;
+
+    private final OrganizationClient organizationClient;
 
     public EmployeeDTO saveEmployee(EmployeeDTO employeeDTO) {
         Employee emp = EmployeeMapper.MAPPER.toEntity(employeeDTO);
@@ -46,7 +50,9 @@ public class EmployeeService {
 
         DepartmentDTO deptDTO = departmentClient.getDepartmentByCode(empDTO.getDepartmentCode());
 
-        return new ApiResponse(empDTO, deptDTO);
+        OrganizationDto org = organizationClient.GetOrgByCode("TecComp");
+
+        return new ApiResponse(empDTO, deptDTO, org);
     }
 
 
