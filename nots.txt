@@ -1,0 +1,92 @@
+eureka=ServiceRegistry/discovery:
+	responsible for registring all the microservices and map instanceses (same service runing multiple time with different port number) 
+	wihtout the need for port number only app name (service ID), Ex: if any microservice want to call other microservice it need to provide service-id only 
+	1- eureka most be the first service to run so other registerd service dont throw error 
+	2- disable eureka client for it self 
+	3- register the services to eureka via application.proparties/yaml 
+	4- anotate the client with @EnableEurekaClient
+
+
+Api gateway: (most be registerd in eureka, and all routed microservices shloud be present in eureka)
+	it will discover the configured routes from eureka by service-id
+	responsible for routing the calls from the client to the desirde service (client dont need the route and port for each microservices) 
+	+ load blancing (distribute the calls between instanceses) + can have centrlaized security
+	Manual Route creation:
+		1- need to register to eureka service (all the microservices should be registerd so the api gateway can route to them)
+		2- it uses the eureka to discover the correct service to call
+		3- need routing configuration, can be done the java or application.proparties/yaml
+		4- each routing should be configured individually and provide the follwing 
+			1- id -> same as the one registerd in eureka
+			2- uri -> lb://(service id)/** (this part to match all following urls) , lb means (load balance)
+			3- predicates -> the base routing for the service, it can be more than one predicate
+	Automatic Routes creation:
+		1- enable discover locator in application.proparties/yaml 
+		2- add spring.cloud.gateway.discovery.locator.enabled=true, this will use for Ex DEPARTMENT-SERVICE as the routing
+		3- add spring.cloud.gateway.discovery.locator.lower-case-service-id=true, used mostly with eureka, this will convert DEPARTMENT-SERVICE to lower-case
+		4- the end result for the route will be (department-service/api/departments)
+		5- also we can change all the route to have prefix with spring.cloud.gateway.discovery.locator.route-id-prefix
+	Note* the manual way is more flixable and maintainable
+
+
+Spring cloud config server:
+centrlaized configuration for all microservices, when edit no need for restarting the servics
+1- uses git repository
+2- need to registerin eureka server
+3- client(microservices) should add config client dep 
+4- need to add git url, clone on start, defualt lable (git branch)
+5- application.name and config server configuration for the client should not be in the repository (Local only)
+6- config file in the repository name should the same name as application.name
+7- add spring actuator dep to be able to reload the application after changing its configuration, need to call (actuator/refresh)
+8- the rest conroller shloud be anotated with @RefreshScope to reload the new configuration from the repository
+9- the config server should restart than we should hit (actuator/refresh) that belong to the service
+
+
+Spring cloud Bus:
+
+used to link multiple application with message broker and broadcast cinfig changes
+to solve the problem of calling (actuator/refresh) for each microservices and trigger it automatically 
+*it need Apache Kafka or RabbitMQ as message broker
+
+1- add it to configuration clients (or microservices) as dep (POM.xml)
+2- run rabbitMQ server on docker
+3- add rabbitMQ configuration to or microservices proparties/yaml file
+4- after changing  any microservice config we need to call (bus/refresh) end-point from any microservice linked with rabbitMQ
+
+
+
+Spring distrubuted tracing:
+spring cloud sleuth is used for distributed tracing and zipkin to visualize the tracing (tracing UI)
+1- add spring seluth to all microservices dep (from API gateway to anything is connected to it)
+2- the log structure -> [service_name, trace_id (same for any microservice connected to the request) , span_id (microservice specific) ]
+3- run Zipkin server on local or docker 
+4- add zipkin client to microservices dep and add zipkin configuration to application.proparties/yaml
+
+
+
+spring cloud Circuit Breaker (Resilience4j) 
+	used as fallback to return a propar response if any microservice is downe
+	block the calls to not working microservice
+	can implement retry, retry to get the information from other microservice if they are not working temporarily 
+	rateLimit to limit the calls from microservice to other microservices  
+	CB (Circuit Breaker): has three states(Open, Closed , Half Open) all the states are in the microservice who implement the CB pattern
+		1- Closed-> allow the calls from microservice(implement CB) to other microservice
+		2- Open-> we can set threshold percent Ex: if we set the threshold to 50% and we have 5 calls to the microservice and 3 failse the state will change to Open (not allowing any request), 
+			we can set time limit for this state and then the state will move to half-open
+		3- Half-Open -> in this state the Circuit Breaker will allow limited number of calls to send for Ex: 3 if any call is success it will move to Closed state, otherwise go back to open (after 3 calls)
+	Retry: pattern to retry calling the microservice more than one if its returning an error, number of retrys and waiting time between each try can be configured in application.proparties/yaml
+	implementation:
+		add spring-cloud-starter-circuitbreaker-resilience4j dep  it also need (AOP, actuator) dependencies
+		it has to implementation CircuitBreaker pattern and retry pattern
+		CircuitBreaker:
+			1- use @CircuitBreaker annotation to any method that calls other microservice and provide name param to it and fallback method(it must have the same params as the oreginal method + Throwable)
+			2- add configuration to application.proparties/yaml
+		Retry:
+			1- for retry use @Retry annotation to any method that calls other microservice and provide name param to it and fallback method(it must have the same params as the oreginal method + Throwable)
+			2- add configuration to application.proparties/yaml
+
+
+
+
+
+
+
